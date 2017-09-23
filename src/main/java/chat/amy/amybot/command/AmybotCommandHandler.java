@@ -1,4 +1,4 @@
-package chat.amy.amybot;
+package chat.amy.amybot.command;
 
 import chat.amy.Backend;
 import chat.amy.amybot.command.Command;

@@ -1,6 +1,7 @@
 package chat.amy.amybot;
 
 import chat.amy.Backend;
+import chat.amy.amybot.command.AmybotCommandHandler;
 import chat.amy.command.CommandManager;
 import chat.amy.event.DiscordEventBus;
 import chat.amy.queue.QueueProcessor;
