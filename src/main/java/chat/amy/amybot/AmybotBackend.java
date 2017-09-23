@@ -15,17 +15,15 @@ public class AmybotBackend implements Backend {
     private final QueueProcessor queueProcessor = new QueueProcessor(this, "discord-backend", 0);
     @Getter
     private final DiscordEventBus discordEventBus = new DiscordEventBus();
+    @Getter
+    private final CommandManager commandManager = new AmybotCommandHandler(this);
     
     public static void main(String[] args) {
         new AmybotBackend().start();
     }
     
-    @Override
-    public CommandManager getCommandManager() {
-        return null;
-    }
-    
     private void start() {
+        commandManager.setup();
         queueProcessor.startPolling();
     }
 }

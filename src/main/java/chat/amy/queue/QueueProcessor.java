@@ -53,7 +53,7 @@ public class QueueProcessor {
                     logger.debug("Getting next event from " + queue + "...");
                     final RBlockingQueue<WrappedEvent> blockingQueue = redis.getBlockingQueue(queue);
                     final WrappedEvent event = blockingQueue.take();
-                    
+                    backend.getDiscordEventBus().push(event);
                 } catch(final InterruptedException e) {
                     logger.warn("Caught exception polling the event queue: {}", e);
                 }

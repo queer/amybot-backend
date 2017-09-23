@@ -13,4 +13,9 @@ public abstract class EventHandler implements EventListener {
     public EventHandler(final String eventType) {
         this.eventType = eventType;
     }
+    
+    @Override
+    public boolean shouldRun(final WrappedEvent event) {
+        return event.getType().equalsIgnoreCase(eventType);
+    }
 }
