@@ -1,7 +1,7 @@
 package chat.amy;
 
 import chat.amy.command.CommandManager;
-import chat.amy.message.MessageProcessor;
+import chat.amy.event.DiscordEventBus;
 import chat.amy.queue.QueueProcessor;
 
 /**
@@ -18,7 +18,7 @@ import chat.amy.queue.QueueProcessor;
 public interface Backend {
     CommandManager getCommandManager();
     
-    MessageProcessor getMessageProcessor();
+    DiscordEventBus getDiscordEventBus();
     
     QueueProcessor getQueueProcessor();
 }

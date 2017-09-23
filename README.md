@@ -1,6 +1,6 @@
 # amybot backend
 
-It processes events and stuff yo
+It processes events and stuff yo. Basically just a library that you implement something on top of, rather than an actual full implementation. 
 
 ## Configuration
 

@@ -1,13 +1,7 @@
 package chat.amy.queue;
 
 import chat.amy.Backend;
-import chat.amy.discord.FakeJDA;
 import chat.amy.event.WrappedEvent;
-import lombok.ToString;
-import lombok.Value;
-import net.dv8tion.jda.core.requests.Requester;
-import net.dv8tion.jda.core.requests.Route;
-import org.json.JSONObject;
 import org.redisson.Redisson;
 import org.redisson.api.RBlockingQueue;
 import org.redisson.api.RedissonClient;
@@ -16,27 +10,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * @author amy
  * @since 9/22/17.
  */
 public class QueueProcessor {
-    private static final String REST_QUEUE = "rest-requester";
     private final Backend backend;
     private final String queue;
     private final RedissonClient redis;
     private final Logger logger;
-    private final ExecutorService threadPool = Executors.newCachedThreadPool();
-    private final FakeJDA jda;
     
     public QueueProcessor(final Backend backend, final String queue, final int idx) {
         this.backend = backend;
         this.queue = queue;
-        logger = LoggerFactory.getLogger("Gateway " + queue + " Processor " + idx);
-        jda = new FakeJDA(System.getenv("BOT_TOKEN"));
+        logger = LoggerFactory.getLogger("Backend " + queue + " Processor " + idx);
         
         final Config config = new Config();
         config.useSingleServer().setAddress(Optional.ofNullable(System.getenv("REDIS_HOST")).orElse("redis://redis:6379"))
@@ -65,11 +53,7 @@ public class QueueProcessor {
                     logger.debug("Getting next event from " + queue + "...");
                     final RBlockingQueue<WrappedEvent> blockingQueue = redis.getBlockingQueue(queue);
                     final WrappedEvent event = blockingQueue.take();
-                    if(backend.getMessageProcessor().validate(event)) {
-                        backend.getMessageProcessor().process(event);
-                    } else {
-                        logger.debug("Discarding event: " + event);
-                    }
+                    
                 } catch(final InterruptedException e) {
                     logger.warn("Caught exception polling the event queue: {}", e);
                 }

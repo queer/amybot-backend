@@ -28,7 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author amy
  * @since 9/23/17.
  */
-@SuppressWarnings("unused")
 public class FakeJDA {
     @Getter
     private final Map<String, Route> routeStorage = new ConcurrentHashMap<>();
