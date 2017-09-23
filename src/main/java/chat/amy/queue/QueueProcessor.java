@@ -1,10 +1,12 @@
 package chat.amy.queue;
 
 import chat.amy.Backend;
+import chat.amy.discord.FakeJDA;
 import chat.amy.event.WrappedEvent;
-import com.google.common.util.concurrent.AbstractScheduledService;
 import lombok.ToString;
 import lombok.Value;
+import net.dv8tion.jda.core.requests.Requester;
+import net.dv8tion.jda.core.requests.Route;
 import org.json.JSONObject;
 import org.redisson.Redisson;
 import org.redisson.api.RBlockingQueue;
@@ -14,24 +16,27 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * @author amy
  * @since 9/22/17.
  */
-public class QueueProcessor extends AbstractScheduledService {
+public class QueueProcessor {
+    private static final String REST_QUEUE = "rest-requester";
     private final Backend backend;
     private final String queue;
     private final RedissonClient redis;
     private final Logger logger;
-    
-    private static final String REST_QUEUE = "rest-requester";
+    private final ExecutorService threadPool = Executors.newCachedThreadPool();
+    private final FakeJDA jda;
     
     public QueueProcessor(final Backend backend, final String queue, final int idx) {
         this.backend = backend;
         this.queue = queue;
         logger = LoggerFactory.getLogger("Gateway " + queue + " Processor " + idx);
+        jda = new FakeJDA(System.getenv("BOT_TOKEN"));
         
         final Config config = new Config();
         config.useSingleServer().setAddress(Optional.ofNullable(System.getenv("REDIS_HOST")).orElse("redis://redis:6379"))
@@ -42,36 +47,32 @@ public class QueueProcessor extends AbstractScheduledService {
         redis = Redisson.create(config);
     }
     
-    @Override
-    protected void runOneIteration() throws Exception {
-        logger.debug("Getting next event from " + queue + "...");
-        final RBlockingQueue<WrappedEvent> blockingQueue = redis.getBlockingQueue(queue);
-        final WrappedEvent event = blockingQueue.take();
-        if(backend.getMessageProcessor().validate(event)) {
-            backend.getMessageProcessor().process(event);
-        } else {
-            logger.debug("Discarding event: " + event);
+    /**
+     * Start the intake queue thread
+     */
+    public void startPolling() {
+        final Thread intakeThread = new Thread(new IntakeQueueThread());
+        intakeThread.setName("amybot backend intake thread");
+        intakeThread.start();
+    }
+    
+    private final class IntakeQueueThread implements Runnable {
+        @Override
+        public void run() {
+            while(true) {
+                try {
+                    logger.debug("Getting next event from " + queue + "...");
+                    final RBlockingQueue<WrappedEvent> blockingQueue = redis.getBlockingQueue(queue);
+                    final WrappedEvent event = blockingQueue.take();
+                    if(backend.getMessageProcessor().validate(event)) {
+                        backend.getMessageProcessor().process(event);
+                    } else {
+                        logger.debug("Discarding event: " + event);
+                    }
+                } catch(final InterruptedException e) {
+                    logger.warn("Caught exception polling the event queue: {}", e);
+                }
+            }
         }
-    }
-    
-    @Override
-    protected Scheduler scheduler() {
-        return Scheduler.newFixedDelaySchedule(0, Long.parseLong(Optional.ofNullable(System.getenv("POLL_DELAY")).orElse("50")),
-                TimeUnit.MILLISECONDS);
-    }
-    
-    // TODO: This should send to the FakeJDA requester
-    public void queue(RESTObject object) {
-        final RBlockingQueue<RESTObject> blockingQueue = redis.getBlockingQueue(REST_QUEUE);
-        logger.debug("Queueing new " + REST_QUEUE + " event: " + object);
-        blockingQueue.add(object);
-    }
-    
-    @Value
-    @ToString
-    public static final class RESTObject {
-        private final String routeName;
-        private final String[] routeParams;
-        private final JSONObject payload;
     }
 }
