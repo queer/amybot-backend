@@ -7,4 +7,5 @@ It processes events and stuff yo
 ```Bash
 BOT_TOKEN="your token here"
 REDIS_HOST="redis://redis:6379"
+REDIS_PASS="whatever"
 ```
