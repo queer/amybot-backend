@@ -12,6 +12,7 @@ import net.dv8tion.jda.core.requests.Route;
 import net.dv8tion.jda.core.requests.Route.CompiledRoute;
 import okhttp3.OkHttpClient.Builder;
 import org.json.JSONObject;
+import redis.clients.jedis.JedisPool;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -36,9 +37,9 @@ public class FakeJDA {
     private final JDAImpl jda;
     
     @SuppressWarnings("UnnecessarilyQualifiedInnerClassAccess")
-    public FakeJDA(final String token) {
-        jda = new JDAImpl(AccountType.BOT, new Builder(), null, false, false,
-                false, true, 4, 900);
+    public FakeJDA(final JedisPool pool, final String token) {
+        jda = new JDAImpl(AccountType.BOT, new Builder(), null, new RedisRatelimiter(pool), false, false,
+                false, true, 8, 900);
         jda.setToken(token);
         
         final Collection<Field> routes = new ArrayList<>();

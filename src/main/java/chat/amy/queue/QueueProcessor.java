@@ -1,15 +1,15 @@
 package chat.amy.queue;
 
 import chat.amy.Backend;
-import chat.amy.event.WrappedEvent;
-import org.redisson.Redisson;
-import org.redisson.api.RBlockingQueue;
-import org.redisson.api.RedissonClient;
-import org.redisson.config.Config;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * @author amy
@@ -18,22 +18,27 @@ import java.util.Optional;
 public class QueueProcessor {
     private final Backend backend;
     private final String queue;
-    private final RedissonClient redis;
+    private final JedisPool redis;
     private final Logger logger;
+    private final ObjectMapper mapper = new ObjectMapper();
     
     public QueueProcessor(final Backend backend, final String queue, final int idx) {
         this.backend = backend;
         this.queue = queue;
         logger = LoggerFactory.getLogger("Backend " + queue + " Processor " + idx);
         
-        final Config config = new Config();
-        config.useSingleServer().setAddress(Optional.ofNullable(System.getenv("REDIS_HOST")).orElse("redis://redis:6379"))
-                .setPassword(System.getenv("REDIS_PASS"))
-                // Based on my bot heavily abusing redis as it is, high connection pool size is not a terrible idea.
-                // NOTE: Current live implementation uses like 500 connections in the pool, so TEST TEST TEST
-                // TODO: Determine better sizing
-                .setConnectionPoolSize(128);
-        redis = Redisson.create(config);
+        final JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
+        jedisPoolConfig.setMaxIdle(1024);
+        jedisPoolConfig.setMaxTotal(1024);
+        jedisPoolConfig.setMaxWaitMillis(500);
+        redis = new JedisPool(jedisPoolConfig, Optional.ofNullable(System.getenv("REDIS_HOST")).orElse("redis://redis:6379"));
+    }
+    
+    private void cache(final Consumer<Jedis> op) {
+        try(Jedis jedis = redis.getResource()) {
+            jedis.auth(System.getenv("REDIS_PASS"));
+            op.accept(jedis);
+        }
     }
     
     /**
@@ -49,14 +54,7 @@ public class QueueProcessor {
         @Override
         public void run() {
             while(true) {
-                try {
-                    logger.debug("Getting next event from " + queue + "...");
-                    final RBlockingQueue<WrappedEvent> blockingQueue = redis.getBlockingQueue(queue);
-                    final WrappedEvent event = blockingQueue.take();
-                    backend.getDiscordEventBus().push(event);
-                } catch(final InterruptedException e) {
-                    logger.warn("Caught exception polling the event queue: {}", e);
-                }
+                // TODO: Implement Q_Q
             }
         }
     }

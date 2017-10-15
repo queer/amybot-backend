@@ -5,6 +5,7 @@ import chat.amy.amybot.command.Command;
 import chat.amy.command.CommandManager;
 import chat.amy.event.EventHandler;
 import chat.amy.event.WrappedEvent;
+import chat.amy.event.impl.MessageHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
@@ -29,7 +30,8 @@ public class AmybotCommandHandler implements CommandManager {
     
     @Override
     public void setup() {
-        backend.getDiscordEventBus().register(new EventHandler("MESSAGE_CREATE") {
+        // TODO: Really don't wanna be handling raw WS events
+        backend.getDiscordEventBus().register(new MessageHandler() {
             @Override
             public void onEvent(final WrappedEvent event) {
             
