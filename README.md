@@ -2,6 +2,15 @@
 
 It processes events and stuff yo.  
 
+## TODO List
+
+- Better command handler
+- Plugin-like architecture, ie. can drop this into another project as a git submodule without issues
+- MQ abstraction
+- JDA REST requester abstraction
+- Sliding-window ratelimiting
+- Better event-level abstraction
+
 ## Configuration
 
 ```Bash
