@@ -29,11 +29,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author amy
  * @since 9/23/17.
  */
+@Getter
 public class FakeJDA {
-    @Getter
     private final Map<String, Route> routeStorage = new ConcurrentHashMap<>();
-    
-    @Getter
     private final JDAImpl jda;
     
     @SuppressWarnings("UnnecessarilyQualifiedInnerClassAccess")
